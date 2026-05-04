@@ -27,8 +27,8 @@ import { generateInitialData, getRealElectionData } from './data';
 import { Constituency, Party, ElectionStats } from './types';
 
 // Image Assets
-const modiImg = 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Official_Photograph_of_Prime_Minister_Narendra_Modi_Portrait.png/800px-Official_Photograph_of_Prime_Minister_Narendra_Modi_Portrait.png';
-const mamataImg = 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Mamata_Banerjee_in_May_2021_%28cropped%29.jpg/800px-Mamata_Banerjee_in_May_2021_%28cropped%29.jpg';
+const modiImg = 'https://pbs.twimg.com/profile_images/1565985672501927936/d-r-h241_400x400.jpg';
+const mamataImg = 'https://pbs.twimg.com/profile_images/1614056156565180416/u-07iUcc_400x400.jpg';
 
 // Components
 const DetailModal = ({ seat, onClose }: { seat: Constituency, onClose: () => void }) => {
@@ -183,13 +183,25 @@ export default function App() {
   }, [lastUpdate]);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const playerIframeRef = useRef<HTMLIFrameElement>(null);
 
   const handleMouseMove = (e: React.MouseEvent) => {
     setMousePos({ x: e.clientX, y: e.clientY });
   };
 
   const playModiSong = () => {
-    setIsPlayingModiSong(prev => !prev);
+    setIsPlayingModiSong(prev => {
+      const next = !prev;
+      if (playerIframeRef.current && playerIframeRef.current.contentWindow) {
+        if (next) {
+          playerIframeRef.current.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [0, true] }), '*');
+          playerIframeRef.current.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), '*');
+        } else {
+          playerIframeRef.current.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }), '*');
+        }
+      }
+      return next;
+    });
   };
 
   // Countdown timer
@@ -635,16 +647,15 @@ export default function App() {
 
       {/* Hidden YouTube Player */}
       <div className="absolute opacity-0 pointer-events-none w-0 h-0 overflow-hidden">
-        {isPlayingModiSong && (
-          <iframe
-            width="10"
-            height="10"
-            src="https://www.youtube.com/embed/CvRvvQebvPE?autoplay=1"
-            frameBorder="0"
-            allow="autoplay"
-            title="Modi Song"
-          ></iframe>
-        )}
+        <iframe
+          ref={playerIframeRef}
+          width="10"
+          height="10"
+          src="https://www.youtube.com/embed/CvRvvQebvPE?enablejsapi=1"
+          frameBorder="0"
+          allow="autoplay"
+          title="Modi Song"
+        ></iframe>
       </div>
 
       {/* Modal */}
