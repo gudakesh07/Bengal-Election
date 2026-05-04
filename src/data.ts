@@ -19,8 +19,13 @@ const REAL_NAMES = [
   "Haringhata", "Bagdah", "Bongaon Uttar", "Bongaon Dakshin", "Gaighata", "Swarupnagar", "Baduria", "Basirhat Uttar", "Basirhat Dakshin", "Hingalganj"
 ];
 
-function getRandomVotes(min: number, max: number) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+function seededRandom(seed: number) {
+  const x = Math.sin(seed + 1234.56) * 10000;
+  return x - Math.floor(x);
+}
+
+function getDeterministicVotes(min: number, max: number, seed: number) {
+  return Math.floor(seededRandom(seed) * (max - min + 1)) + min;
 }
 
 function processEciData(json: any): Constituency[] {
@@ -61,17 +66,17 @@ function processEciData(json: any): Constituency[] {
     
     let bjp, tmc, others;
     if (leading === "BJP") {
-      bjp = getRandomVotes(40000, 80000);
-      tmc = getRandomVotes(10000, 39000);
-      others = getRandomVotes(5000, 20000);
+      bjp = getDeterministicVotes(40000, 80000, acIndex * 3);
+      tmc = getDeterministicVotes(10000, 39000, acIndex * 3 + 1);
+      others = getDeterministicVotes(5000, 20000, acIndex * 3 + 2);
     } else if (leading === "TMC") {
-      tmc = getRandomVotes(40000, 80000);
-      bjp = getRandomVotes(10000, 39000);
-      others = getRandomVotes(5000, 20000);
+      tmc = getDeterministicVotes(40000, 80000, acIndex * 3);
+      bjp = getDeterministicVotes(10000, 39000, acIndex * 3 + 1);
+      others = getDeterministicVotes(5000, 20000, acIndex * 3 + 2);
     } else {
-      others = getRandomVotes(40000, 80000);
-      bjp = getRandomVotes(10000, 39000);
-      tmc = getRandomVotes(10000, 39000);
+      others = getDeterministicVotes(40000, 80000, acIndex * 3);
+      bjp = getDeterministicVotes(10000, 39000, acIndex * 3 + 1);
+      tmc = getDeterministicVotes(10000, 39000, acIndex * 3 + 2);
     }
 
     // Attempt to use real votes if available in an object approach
@@ -113,9 +118,9 @@ export function generateInitialData(): Constituency[] {
     for (let i = 0; i < TOTAL_SEATS; i++) {
       const name = REAL_NAMES[i] || `Constituency ${i + 1}`;
       const candidateName = CANDIDATE_NAMES[i % CANDIDATE_NAMES.length];
-      const bjp = getRandomVotes(10000, 80000);
-      const tmc = getRandomVotes(10000, 80000);
-      const others = getRandomVotes(5000, 40000);
+      const bjp = getDeterministicVotes(10000, 80000, i * 3);
+      const tmc = getDeterministicVotes(10000, 80000, i * 3 + 1);
+      const others = getDeterministicVotes(5000, 40000, i * 3 + 2);
 
       let leading: Party = "BJP";
       if (tmc > bjp && tmc > others) leading = "TMC";
@@ -137,7 +142,7 @@ export function generateInitialData(): Constituency[] {
 
 export async function getRealElectionData(): Promise<Constituency[]> {
   try {
-    const response = await fetch("/results.json");
+    const response = await fetch("/api/results");
     if (!response.ok) throw new Error(`Server data fetch failed: ${response.status} ${response.statusText}`);
     const json = await response.json();
     return processEciData(json);

@@ -9,7 +9,7 @@ async function startServer() {
 
   const SOURCE = "https://results.eci.gov.in/ResultAcGenMay2026/election-json-S25-live.json";
 
-  app.get("/results.json", async (req, res) => {
+  app.get("/api/results", async (req, res) => {
     let raw;
     try {
       const response = await fetch(SOURCE, {

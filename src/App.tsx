@@ -25,10 +25,7 @@ import {
 } from 'lucide-react';
 import { generateInitialData, getRealElectionData } from './data';
 import { Constituency, Party, ElectionStats } from './types';
-
-// Image Assets
-const modiImg = 'https://pbs.twimg.com/profile_images/1565985672501927936/d-r-h241_400x400.jpg';
-const mamataImg = 'https://pbs.twimg.com/profile_images/1614056156565180416/u-07iUcc_400x400.jpg';
+import { modiImg, mamataImg } from './images';
 
 // Components
 const DetailModal = ({ seat, onClose }: { seat: Constituency, onClose: () => void }) => {
