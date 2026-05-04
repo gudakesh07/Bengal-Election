@@ -147,7 +147,7 @@ export async function getRealElectionData(): Promise<Constituency[]> {
     const json = await response.json();
     return processEciData(json);
   } catch (error) {
-    console.error("Failed to fetch real data, using bundled data:", error);
+    console.error("Failed to fetch real data:", error);
     return generateInitialData();
   }
 }
