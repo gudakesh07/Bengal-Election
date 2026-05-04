@@ -24,32 +24,61 @@ function getRandomVotes(min: number, max: number) {
 }
 
 function processEciData(json: any): Constituency[] {
-  const dataArray = json.data;
-  if (!Array.isArray(dataArray)) {
+  // Check if it's the specific chartData format
+  let dataArray = null;
+  if (json && json.S25 && json.S25.chartData) {
+    dataArray = json.S25.chartData;
+  } else if (json && json.data && Array.isArray(json.data)) {
+    dataArray = json.data;
+  }
+
+  if (!dataArray || !Array.isArray(dataArray)) {
     throw new Error("Invalid format from ECI data");
   }
 
   const constituencies: Constituency[] = [];
   
   dataArray.forEach((item: any, index: number) => {
-    const acIndex = item.constituencyId ? Math.max(0, parseInt(item.constituencyId) - 1) : index;
-    const candidateName = item.candidate || `Candidate ${index}`;
-    const name = REAL_NAMES[acIndex] || item.constituency || `AC-${acIndex + 1}`;
-    const leading = item.party as Party;
+    // If item is an array like ["BJP", "S25", 1, "CANDIDATE", "#color"]
+    let acIndex = index;
+    let candidateName = `Candidate ${index}`;
+    let name = REAL_NAMES[index] || `AC-${index + 1}`;
+    let leading = "OTHERS" as Party;
+
+    if (Array.isArray(item)) {
+      leading = (item[0] === "BJP" || item[0] === "AITC" || item[0] === "TMC") ? 
+                 (item[0] === "AITC" ? "TMC" : item[0]) as Party : "OTHERS";
+      acIndex = Math.max(0, parseInt(item[2]) - 1);
+      candidateName = item[3] !== "NA" ? item[3] : "Unknown";
+      name = REAL_NAMES[acIndex] || `AC-${acIndex + 1}`;
+    } else {
+      // Original parsing logic
+      acIndex = item.constituencyId ? Math.max(0, parseInt(item.constituencyId) - 1) : index;
+      candidateName = item.candidate || `Candidate ${index}`;
+      name = REAL_NAMES[acIndex] || item.constituency || `AC-${acIndex + 1}`;
+      leading = (item.party === "BJP" || item.party === "TMC") ? item.party : "OTHERS";
+    }
     
     let bjp, tmc, others;
     if (leading === "BJP") {
-      bjp = item.votes || getRandomVotes(40000, 80000);
+      bjp = getRandomVotes(40000, 80000);
       tmc = getRandomVotes(10000, 39000);
       others = getRandomVotes(5000, 20000);
     } else if (leading === "TMC") {
-      tmc = item.votes || getRandomVotes(40000, 80000);
+      tmc = getRandomVotes(40000, 80000);
       bjp = getRandomVotes(10000, 39000);
       others = getRandomVotes(5000, 20000);
     } else {
-      others = item.votes || getRandomVotes(40000, 80000);
+      others = getRandomVotes(40000, 80000);
       bjp = getRandomVotes(10000, 39000);
       tmc = getRandomVotes(10000, 39000);
+    }
+
+    // Attempt to use real votes if available in an object approach
+    if (!Array.isArray(item) && item.votes) {
+       if (leading === "BJP") bjp = item.votes;
+       else if (leading === "TMC") tmc = item.votes;
+       else others = item.votes;
     }
 
     constituencies.push({

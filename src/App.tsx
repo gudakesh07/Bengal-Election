@@ -27,8 +27,8 @@ import { generateInitialData, getRealElectionData } from './data';
 import { Constituency, Party, ElectionStats } from './types';
 
 // Image Assets
-import modiImg from './assets/images/regenerated_image_1777880030491.jpg';
-import mamataImg from './assets/images/regenerated_image_1777880031958.jpg';
+const modiImg = 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Official_Photograph_of_Prime_Minister_Narendra_Modi_Portrait.png/800px-Official_Photograph_of_Prime_Minister_Narendra_Modi_Portrait.png';
+const mamataImg = 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Mamata_Banerjee_in_May_2021_%28cropped%29.jpg/800px-Mamata_Banerjee_in_May_2021_%28cropped%29.jpg';
 
 // Components
 const DetailModal = ({ seat, onClose }: { seat: Constituency, onClose: () => void }) => {
@@ -183,25 +183,13 @@ export default function App() {
   }, [lastUpdate]);
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const playerIframeRef = useRef<HTMLIFrameElement>(null);
 
   const handleMouseMove = (e: React.MouseEvent) => {
     setMousePos({ x: e.clientX, y: e.clientY });
   };
 
   const playModiSong = () => {
-    setIsPlayingModiSong(prev => {
-      const next = !prev;
-      if (playerIframeRef.current && playerIframeRef.current.contentWindow) {
-        if (next) {
-          playerIframeRef.current.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [0, true] }), '*');
-          playerIframeRef.current.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), '*');
-        } else {
-          playerIframeRef.current.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }), '*');
-        }
-      }
-      return next;
-    });
+    setIsPlayingModiSong(prev => !prev);
   };
 
   // Countdown timer
@@ -536,7 +524,7 @@ export default function App() {
                     contentStyle={{ backgroundColor: '#18181b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', fontSize: '12px' }}
                     itemStyle={{ color: '#fff', fontWeight: 'bold' }}
                   />
-                  <Bar dataKey="seats" radius={[4, 4, 0, 0]}>
+                  <Bar dataKey="seats" radius={[4, 4, 0, 0]} label={{ position: 'top', fill: '#fff', fontSize: 10, fontWeight: 'bold' }}>
                     {chartData.seatShare.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.fill} />
                     ))}
@@ -560,6 +548,19 @@ export default function App() {
                     paddingAngle={5}
                     dataKey="value"
                     stroke="none"
+                    label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }) => {
+                      const RADIAN = Math.PI / 180;
+                      // Place the label slightly outside the outer radius for readability
+                      const radius = outerRadius + 20; 
+                      const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                      const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                      return (
+                        <text x={x} y={y} fill="#71717a" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={10} fontWeight="bold">
+                          {`${name} ${(percent * 100).toFixed(0)}%`}
+                        </text>
+                      );
+                    }}
+                    labelLine={false}
                   >
                     {chartData.voteShare.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.fill} />
@@ -632,17 +633,18 @@ export default function App() {
 
       <HoverTooltip seat={hoveredSeat} pos={mousePos} />
 
-      {/* Hidden YouTube Player (Preloaded for instant playback) */}
+      {/* Hidden YouTube Player */}
       <div className="absolute opacity-0 pointer-events-none w-0 h-0 overflow-hidden">
-        <iframe
-          ref={playerIframeRef}
-          width="10"
-          height="10"
-          src="https://www.youtube.com/embed/CvRvvQebvPE?enablejsapi=1"
-          frameBorder="0"
-          allow="autoplay"
-          title="Modi Song"
-        ></iframe>
+        {isPlayingModiSong && (
+          <iframe
+            width="10"
+            height="10"
+            src="https://www.youtube.com/embed/CvRvvQebvPE?autoplay=1"
+            frameBorder="0"
+            allow="autoplay"
+            title="Modi Song"
+          ></iframe>
+        )}
       </div>
 
       {/* Modal */}
